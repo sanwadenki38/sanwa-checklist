@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>三和デンキ 現場チェックリスト</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Bebas+Neue&display=swap');
+  :root {
+    --red: #C8102E; --dark: #1a1a1a; --mid: #2d2d2d; --card: #242424;
+    --border: #383838; --text: #f0f0f0; --muted: #888;
+    --green: #2ecc71; --yellow: #f1c40f; --blue: #3498db; --purple: #9b59b6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans JP', sans-serif; background: var(--dark); color: var(--text); min-height: 100vh; }
+
+  .header {
+    background: var(--red); padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+  }
+  .header-logo { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: white; }
+  .header-sub { font-size: 10px; color: rgba(255,255,255,0.8); margin-top: 2px; }
+  .header-btn {
+    background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
+    color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px;
+    cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .screen { display: none; padding: 20px; max-width: 600px; margin: 0 auto; }
+  .screen.active { display: block; }
+
+  .mode-wrap {
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 20px; gap: 16px;
+  }
+  .mode-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px 20px; width: 100%; max-width: 340px; cursor: pointer;
+    transition: border-color 0.2s, transform 0.1s; display: flex; align-items: center; gap: 16px;
+  }
+  .mode-card:active { transform: scale(0.98); }
+  .mode-card.staff { border-left: 4px solid var(--blue); }
+  .mode-card.boss { border-left: 4px solid var(--red); }
+  .mode-icon { font-size: 36px; }
+  .mode-label { font-size: 16px; font-weight: 700; }
+  .mode-desc { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .login-box {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 36px 28px; width: 100%; max-width: 340px; text-align: center;
+  }
+  .login-icon { font-size: 48px; margin-bottom: 12px; }
+  .login-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .login-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+  .login-input {
+    width: 100%; background: var(--mid); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px; font-size: 16px; color: var(--text);
+    margin-bottom: 14px; font-family: 'Noto Sans JP', sans-serif;
+  }
+  .login-input:focus { outline: none; border-color: var(--red); }
+  .btn-primary {
+    width: 100%; background: var(--red); color: white; border: none;
+    border-radius: 10px; padding: 14px; font-size: 16px; font-weight: 700;
+    cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: opacity 0.2s;
+  }
+  .btn-primary:active { opacity: 0.8; }
+  .login-error { color: #ff6b6b; font-size: 13px; margin-top: 10px; display: none; }
+
+  .step-tabs {
+    display: flex; background: var(--mid); border-radius: 12px;
+    padding: 4px; margin-bottom: 20px; gap: 4px;
+  }
+  .step-tab {
+    flex: 1; padding: 10px 4px; border-radius: 8px; border: none;
+    background: transparent; color: var(--muted); font-size: 11px; font-weight: 700;
+    cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+    transition: all 0.2s; text-align: center; line-height: 1.4;
+  }
+  .step-tab.active { background: var(--red); color: white; }
+  .step-tab .step-icon { font-size: 16px; display: block; margin-bottom: 2px; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 14px; }
+  .card-title {
+    font-size: 13px; font-weight: 700; color: var(--muted);
+    letter-spacing: 1px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+  }
+  .card-title::before {
+    content: ''; display: inline-block; width: 3px; height: 14px;
+    background: var(--red); border-radius: 2px; flex-shrink: 0;
+  }
+
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 6px; }
+  .field input, .field select, .field textarea {
+    width: 100%; background: var(--mid); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; font-size: 15px; color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif; appearance: none; -webkit-appearance: none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--red); }
+  .field textarea { min-height: 80px; resize: vertical; }
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: '▼'; position: absolute; right: 14px; top: 50%;
+    transform: translateY(-50%); font-size: 11px; color: var(--muted); pointer-events: none;
+  }
+
+  .check-item {
+    display: flex; align-items: center; gap: 14px; padding: 13px 0;
+    border-bottom: 1px solid var(--border); cursor: pointer;
+  }
+  .check-item:last-child { border-bottom: none; }
+  .check-box {
+    width: 24px; height: 24px; border: 2px solid var(--border); border-radius: 6px;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+  }
+  .check-item.checked .check-box { background: var(--green); border-color: var(--green); }
+  .check-item.checked .check-box::after { content: '✓'; color: white; font-size: 14px; font-weight: 700; }
+  .check-item.checked .check-label { color: var(--muted); text-decoration: line-through; }
+  .check-label { font-size: 14px; line-height: 1.5; flex: 1; }
+
+  .photo-upload {
+    border: 2px dashed var(--border); border-radius: 12px; padding: 24px;
+    text-align: center; cursor: pointer; transition: border-color 0.2s; margin-top: 4px;
+  }
+  .photo-upload:active { border-color: var(--red); }
+  .photo-upload-icon { font-size: 32px; margin-bottom: 8px; }
+  .photo-upload-text { font-size: 13px; color: var(--muted); }
+  .photo-preview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+  .photo-thumb { aspect-ratio: 1; border-radius: 8px; object-fit: cover; width: 100%; }
+  input[type="file"] { display: none; }
+
+  .btn-submit {
+    width: 100%; background: var(--red); color: white; border: none;
+    border-radius: 14px; padding: 18px; font-size: 17px; font-weight: 700;
+    cursor: pointer; font-family: 'Noto Sans JP', sans-serif; margin-top: 8px;
+    transition: opacity 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-submit:active { opacity: 0.8; }
+  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .success-screen { text-align: center; padding: 60px 20px; }
+  .success-icon { font-size: 64px; margin-bottom: 16px; }
+  .success-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .success-sub { font-size: 14px; color: var(--muted); }
+  .btn-back {
+    background: var(--mid); color: var(--text); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 28px; font-size: 15px; font-weight: 500;
+    cursor: pointer; font-family: 'Noto Sans JP', sans-serif; margin-top: 28px;
+  }
+
+  /* BOSS */
+  .boss-tabs {
+    display: flex; background: var(--mid); border-radius: 12px;
+    padding: 4px; margin-bottom: 20px; gap: 4px;
+  }
+  .boss-tab {
+    flex: 1; padding: 10px 4px; border-radius: 8px; border: none;
+    background: transparent; color: var(--muted); font-size: 12px; font-weight: 700;
+    cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+    transition: all 0.2s; text-align: center;
+  }
+  .boss-tab.active { background: var(--red); color: white; }
+
+  .dash-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 10px; text-align: center; }
+  .stat-num { font-size: 28px; font-weight: 900; color: var(--red); }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  .report-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+  .report-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+  .report-name { font-size: 16px; font-weight: 700; }
+  .report-date { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .badge-estimate { background: rgba(52,152,219,0.2); color: var(--blue); }
+  .badge-depart { background: rgba(241,196,15,0.2); color: var(--yellow); }
+  .badge-complete { background: rgba(46,204,113,0.2); color: var(--green); }
+  .report-note { background: var(--mid); border-radius: 8px; padding: 10px 12px; font-size: 13px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+
+  .filter-tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+  .filter-tab {
+    padding: 7px 14px; border-radius: 20px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); font-size: 12px; font-weight: 700;
+    cursor: pointer; font-family: 'Noto Sans JP', sans-serif; white-space: nowrap; transition: all 0.2s;
+  }
+  .filter-tab.active { background: var(--red); color: white; border-color: var(--red); }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .section-title { font-size: 20px; font-weight: 900; margin-bottom: 6px; }
+  .section-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+  .spacer { height: 40px; }
+  .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+  .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--red); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .new-badge { display: inline-block; background: var(--red); color: white; border-radius: 10px; padding: 2px 8px; font-size: 10px; font-weight: 700; margin-left: 8px; }
+
+  /* ===== 項目編集 ===== */
+  .edit-section-tabs {
+    display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px;
+  }
+  .edit-section-tab {
+    padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); font-size: 12px; font-weight: 700;
+    cursor: pointer; font-family: 'Noto Sans JP', sans-serif; white-space: nowrap;
+  }
+  .edit-section-tab.active { background: var(--purple); color: white; border-color: var(--purple); }
+
+  .edit-item {
+    display: flex; align-items: center; gap: 10px; padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .edit-item:last-child { border-bottom: none; }
+  .edit-item-input {
+    flex: 1; background: var(--mid); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px; font-size: 14px; color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .edit-item-input:focus { outline: none; border-color: var(--purple); }
+  .btn-icon {
+    width: 36px; height: 36px; border-radius: 8px; border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 16px; flex-shrink: 0; transition: opacity 0.2s;
+  }
+  .btn-icon:active { opacity: 0.7; }
+  .btn-delete { background: rgba(200,16,46,0.2); color: var(--red); }
+  .btn-up { background: var(--mid); color: var(--muted); }
+  .btn-down { background: var(--mid); color: var(--muted); }
+
+  .btn-add-item {
+    width: 100%; background: rgba(155,89,182,0.15); color: var(--purple);
+    border: 2px dashed var(--purple); border-radius: 10px; padding: 12px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif; margin-top: 12px; transition: opacity 0.2s;
+  }
+  .btn-add-item:active { opacity: 0.7; }
+
+  .btn-save-items {
+    width: 100%; background: var(--purple); color: white; border: none;
+    border-radius: 14px; padding: 16px; font-size: 16px; font-weight: 700;
+    cursor: pointer; font-family: 'Noto Sans JP', sans-serif; margin-top: 16px;
+    transition: opacity 0.2s;
+  }
+  .btn-save-items:active { opacity: 0.8; }
+  .btn-save-items:disabled { opacity: 0.5; }
+
+  .save-success {
+    background: rgba(46,204,113,0.15); color: var(--green);
+    border-radius: 10px; padding: 12px; text-align: center;
+    font-size: 14px; font-weight: 700; margin-top: 12px; display: none;
+  }
+</style>
+</head>
+<body>
+
+<!-- MODE SELECT -->
+<div id="modeScreen" class="mode-wrap">
+  <div>
+    <div style="text-align:center; margin-bottom:28px;">
+      <div style="font-family:'Bebas Neue',sans-serif; font-size:32px; color:var(--red); letter-spacing:3px;">三和デンキ</div>
+      <div style="font-size:14px; color:var(--muted); margin-top:4px;">現場チェックシステム</div>
+    </div>
+    <div class="mode-card staff" onclick="showStaff()">
+      <div class="mode-icon">👷</div>
+      <div><div class="mode-label">社員・スタッフ</div><div class="mode-desc">現場チェックリストを入力する</div></div>
+    </div>
+    <div class="mode-card boss" onclick="showBossLogin()" style="margin-top:0;">
+      <div class="mode-icon">👔</div>
+      <div><div class="mode-label">社長確認画面</div><div class="mode-desc">報告確認・項目編集</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- BOSS LOGIN -->
+<div id="bossLoginScreen" style="display:none;">
+  <div class="login-wrap">
+    <div class="login-box">
+      <div class="login-icon">🔐</div>
+      <div class="login-title">社長ログイン</div>
+      <div class="login-sub">パスワードを入力してください</div>
+      <input type="password" class="login-input" id="pwInput" placeholder="パスワード" onkeydown="if(event.key==='Enter')checkPw()">
+      <button class="btn-primary" onclick="checkPw()">ログイン</button>
+      <div class="login-error" id="pwError">パスワードが違います</div>
+      <button class="btn-back" style="margin-top:16px;width:100%;" onclick="showMode()">戻る</button>
+    </div>
+  </div>
+</div>
+
+<!-- STAFF SCREEN -->
+<div id="staffScreen" style="display:none;">
+  <div class="header">
+    <div><div class="header-logo">三和デンキ</div><div class="header-sub">現場チェックリスト</div></div>
+    <button class="header-btn" onclick="showMode()">終了</button>
+  </div>
+  <div class="screen active" id="staffContent">
+    <div style="height:16px;"></div>
+    <div class="step-tabs">
+      <button class="step-tab active" id="tab0" onclick="setStep(0)"><span class="step-icon">📋</span>見積り</button>
+      <button class="step-tab" id="tab1" onclick="setStep(1)"><span class="step-icon">🚗</span>出発前</button>
+      <button class="step-tab" id="tab2" onclick="setStep(2)"><span class="step-icon">✅</span>完了後</button>
+    </div>
+
+    <!-- STEP 0 見積り -->
+    <div id="step0">
+      <div class="section-title">見積り記録</div>
+      <div class="section-sub">お客様宅での見積り訪問時に入力してください</div>
+      <div class="card">
+        <div class="card-title">基本情報</div>
+        <div class="field"><label>日付</label><input type="date" id="e_date"></div>
+        <div class="field"><label>担当者</label>
+          <div class="select-wrap"><select id="e_staff">
+            <option value="">選択してください</option>
+            <option>幸太郎</option><option>寛太郎</option><option>美香</option>
+          </select></div>
+        </div>
+        <div class="field"><label>お客様名</label><input type="text" id="e_customer" placeholder="例：田中様"></div>
+        <div class="field"><label>工事場所・住所</label><input type="text" id="e_address" placeholder="例：大阪市〇〇区〇〇"></div>
+        <div class="field"><label>工事内容</label>
+          <div class="select-wrap"><select id="e_type">
+            <option value="">選択してください</option>
+            <option>エアコン新規取付</option><option>エアコン交換</option>
+            <option>冷蔵庫搬入・設置</option><option>洗濯機設置</option>
+            <option>テレビ設置</option><option>その他</option>
+          </select></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">現地確認チェック</div>
+        <div id="checkList0"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">現地写真・見積書</div>
+        <div class="photo-upload" onclick="document.getElementById('e_photos').click()">
+          <div class="photo-upload-icon">📷</div>
+          <div class="photo-upload-text">タップして写真を追加<br><span style="font-size:11px;">設置場所・コンセント・見積書など</span></div>
+        </div>
+        <input type="file" id="e_photos" accept="image/*" multiple onchange="previewPhotos(this,'e_preview')">
+        <div class="photo-preview" id="e_preview"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">注意ポイント・メモ</div>
+        <div class="field"><textarea id="e_note" placeholder="例：2階の窓側に設置予定。廊下が狭いため搬入注意。"></textarea></div>
+      </div>
+      <button class="btn-submit" id="submitBtn0" onclick="submitStep(0)">📤 見積り報告を送信</button>
+      <div class="spacer"></div>
+    </div>
+
+    <!-- STEP 1 出発前 -->
+    <div id="step1" style="display:none;">
+      <div class="section-title">出発前チェック</div>
+      <div class="section-sub">現場へ向かう前に確認してください</div>
+      <div class="card">
+        <div class="card-title">基本情報</div>
+        <div class="field"><label>日付</label><input type="date" id="d_date"></div>
+        <div class="field"><label>担当者</label>
+          <div class="select-wrap"><select id="d_staff">
+            <option value="">選択してください</option>
+            <option>幸太郎</option><option>寛太郎</option><option>美香</option>
+          </select></div>
+        </div>
+        <div class="field"><label>お客様名・工事場所</label><input type="text" id="d_customer" placeholder="例：田中様・大阪市〇〇"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">出発前チェック</div>
+        <div id="checkList1"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">積込写真</div>
+        <div class="photo-upload" onclick="document.getElementById('d_photos').click()">
+          <div class="photo-upload-icon">📷</div>
+          <div class="photo-upload-text">積込完了の写真を撮影</div>
+        </div>
+        <input type="file" id="d_photos" accept="image/*" multiple onchange="previewPhotos(this,'d_preview')">
+        <div class="photo-preview" id="d_preview"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">出発前メモ</div>
+        <div class="field"><textarea id="d_note" placeholder="例：お客様から駐車場は〇〇を使ってと連絡あり。"></textarea></div>
+      </div>
+      <button class="btn-submit" id="submitBtn1" onclick="submitStep(1)">📤 出発前チェックを送信</button>
+      <div class="spacer"></div>
+    </div>
+
+    <!-- STEP 2 完了後 -->
+    <div id="step2" style="display:none;">
+      <div class="section-title">工事完了報告</div>
+      <div class="section-sub">全作業終了後、お客様宅を出る前に入力してください</div>
+      <div class="card">
+        <div class="card-title">基本情報</div>
+        <div class="field"><label>日付</label><input type="date" id="c_date"></div>
+        <div class="field"><label>担当者</label>
+          <div class="select-wrap"><select id="c_staff">
+            <option value="">選択してください</option>
+            <option>幸太郎</option><option>寛太郎</option><option>美香</option>
+          </select></div>
+        </div>
+        <div class="field"><label>お客様名・工事場所</label><input type="text" id="c_customer" placeholder="例：田中様・大阪市〇〇"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">完了チェック</div>
+        <div id="checkList2"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">完了写真</div>
+        <div class="photo-upload" onclick="document.getElementById('c_photos').click()">
+          <div class="photo-upload-icon">📷</div>
+          <div class="photo-upload-text">完了後の写真を撮影<br><span style="font-size:11px;">設置完了・清掃後の状態など</span></div>
+        </div>
+        <input type="file" id="c_photos" accept="image/*" multiple onchange="previewPhotos(this,'c_preview')">
+        <div class="photo-preview" id="c_preview"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">完了メモ・特記事項</div>
+        <div class="field"><textarea id="c_note" placeholder="例：お客様から追加のご要望あり。次回〇〇の点検をご希望。"></textarea></div>
+      </div>
+      <button class="btn-submit" id="submitBtn2" onclick="submitStep(2)">📤 完了報告を送信</button>
+      <div class="spacer"></div>
+    </div>
+
+    <div id="successMsg" style="display:none;">
+      <div class="success-screen">
+        <div class="success-icon">✅</div>
+        <div class="success-title">送信しました！</div>
+        <div class="success-sub">社長に報告が届きました。<br>お疲れ様でした！</div>
+        <button class="btn-back" onclick="afterSubmit()">続けて入力する</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOSS SCREEN -->
+<div id="bossScreen" style="display:none;">
+  <div class="header">
+    <div><div class="header-logo">社長ダッシュボード</div><div class="header-sub">三和デンキ 現場報告</div></div>
+    <button class="header-btn" onclick="showMode()">ログアウト</button>
+  </div>
+  <div class="screen active">
+    <div style="height:16px;"></div>
+
+    <!-- Boss tabs -->
+    <div class="boss-tabs">
+      <button class="boss-tab active" id="bossTab0" onclick="setBossTab(0)">📊 報告一覧</button>
+      <button class="boss-tab" id="bossTab1" onclick="setBossTab(1)">✏️ 項目編集</button>
+    </div>
+
+    <!-- 報告一覧 -->
+    <div id="bossPanel0">
+      <div class="dash-stats">
+        <div class="stat-card"><div class="stat-num" id="statTotal">-</div><div class="stat-label">総報告数</div></div>
+        <div class="stat-card"><div class="stat-num" id="statToday">-</div><div class="stat-label">今日</div></div>
+        <div class="stat-card"><div class="stat-num" id="statComplete">-</div><div class="stat-label">完了報告</div></div>
+      </div>
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="filterReports('all',this)">すべて</button>
+        <button class="filter-tab" onclick="filterReports('estimate',this)">見積り</button>
+        <button class="filter-tab" onclick="filterReports('depart',this)">出発前</button>
+        <button class="filter-tab" onclick="filterReports('complete',this)">完了</button>
+      </div>
+      <div id="reportsList"><div class="loading"><div class="spinner"></div><br>読み込み中...</div></div>
+    </div>
+
+    <!-- 項目編集 -->
+    <div id="bossPanel1" style="display:none;">
+      <div class="section-title">チェック項目の編集</div>
+      <div class="section-sub">項目の追加・削除・名前変更・順番変更ができます</div>
+
+      <div class="edit-section-tabs">
+        <button class="edit-section-tab active" id="editTab0" onclick="setEditTab(0)">📋 見積り</button>
+        <button class="edit-section-tab" id="editTab1" onclick="setEditTab(1)">🚗 出発前</button>
+        <button class="edit-section-tab" id="editTab2" onclick="setEditTab(2)">✅ 完了後</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title" id="editCardTitle">見積り　チェック項目</div>
+        <div id="editItemsList"></div>
+        <button class="btn-add-item" onclick="addEditItem()">＋ 項目を追加する</button>
+      </div>
+
+      <button class="btn-save-items" id="saveItemsBtn" onclick="saveItems()">💾 保存して社員の画面に反映する</button>
+      <div class="save-success" id="saveSuccess">✅ 保存しました！社員の画面に反映されました。</div>
+      <div class="spacer"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, push, onValue, query, orderByChild, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDxCT6AepQOdoeK_gidTys9PiWZAuD-rsA",
+    authDomain: "sanwa-checklist-a9901.firebaseapp.com",
+    databaseURL: "https://sanwa-checklist-a9901-default-rtdb.firebaseio.com",
+    projectId: "sanwa-checklist-a9901",
+    storageBucket: "sanwa-checklist-a9901.firebasestorage.app",
+    messagingSenderId: "688437866322",
+    appId: "1:688437866322:web:11596387397fcd4e86d48b"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const BOSS_PW = 'sanwa1234';
+  let currentStep = 0;
+  let allReports = [];
+  let currentFilter = 'all';
+  let lastSeenCount = parseInt(localStorage.getItem('lastSeenCount') || '0');
+  let currentEditTab = 0;
+
+  // デフォルト項目
+  const defaultItems = [
+    [
+      '設置場所の寸法を測った',
+      'コンセントの形状・電圧を確認した',
+      '配管穴の位置・状態を確認した',
+      '搬入経路・障害物を確認した',
+      '見積書をお渡し（またはお送り）した',
+      '工事日程をお客様と確認した'
+    ],
+    [
+      '前日または当日朝にお客様へ訪問確認の電話をした',
+      '到着時間をお伝えした',
+      '本体・部材の型番を確認した',
+      '予備の配管・ドレンホース・電線を積んだ',
+      'ビス・サドル・パテなどの消耗品が十分にある',
+      '真空ポンプのバッテリー（またはコード）がある',
+      '穴あけコア・ハシゴ・養生マットを積んだ',
+      '電動工具の予備バッテリーが充電されている',
+      '車内が整理されて取り出しやすい状態',
+      '前日のゴミ・古い部材を降ろした'
+    ],
+    [
+      '試運転を行い、冷気・暖気・排水を確認した',
+      '水漏れ・異音・異常がないことを確認した',
+      '配管の仕上がり・パテ処理を確認した',
+      '取扱説明を行い、リモコンの設定を説明した',
+      'お客様に仕上がりを確認していただいた',
+      'お客様のご確認をいただいた',
+      '作業場所を清掃した（工事前より綺麗に）',
+      '道具をすべて車に戻した（宅内に忘れ物なし）',
+      '車周りのゴミ・忘れ物がない'
+    ]
+  ];
+
+  let checkItems = [[], [], []];
+
+  // ===== LOAD ITEMS FROM FIREBASE =====
+  async function loadCheckItems() {
+    try {
+      const snap = await get(ref(db, 'checkItems'));
+      if (snap.exists()) {
+        const data = snap.val();
+        checkItems[0] = data[0] || defaultItems[0];
+        checkItems[1] = data[1] || defaultItems[1];
+        checkItems[2] = data[2] || defaultItems[2];
+      } else {
+        checkItems = defaultItems.map(arr => [...arr]);
+      }
+    } catch(e) {
+      checkItems = defaultItems.map(arr => [...arr]);
+    }
+    renderStaffChecks();
+  }
+
+  function renderStaffChecks() {
+    [0,1,2].forEach(step => {
+      const container = document.getElementById('checkList'+step);
+      container.innerHTML = checkItems[step].map(label => `
+        <div class="check-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-label">${label}</div>
+        </div>
+      `).join('');
+    });
+  }
+
+  // ===== NAVIGATION =====
+  window.showMode = () => {
+    ['modeScreen','bossLoginScreen','staffScreen','bossScreen'].forEach(id => {
+      document.getElementById(id).style.display = 'none';
+    });
+    document.getElementById('modeScreen').style.display = 'flex';
+  };
+
+  window.showStaff = async () => {
+    ['modeScreen','bossLoginScreen','staffScreen','bossScreen'].forEach(id => {
+      document.getElementById(id).style.display = 'none';
+    });
+    document.getElementById('staffScreen').style.display = 'block';
+    await loadCheckItems();
+    setToday();
+  };
+
+  window.showBossLogin = () => {
+    ['modeScreen','bossLoginScreen','staffScreen','bossScreen'].forEach(id => {
+      document.getElementById(id).style.display = 'none';
+    });
+    document.getElementById('bossLoginScreen').style.display = 'block';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwError').style.display = 'none';
+  };
+
+  window.checkPw = () => {
+    if (document.getElementById('pwInput').value === BOSS_PW) {
+      ['modeScreen','bossLoginScreen','staffScreen','bossScreen'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
+      });
+      document.getElementById('bossScreen').style.display = 'block';
+      loadReports();
+      loadCheckItems();
+    } else {
+      document.getElementById('pwError').style.display = 'block';
+    }
+  };
+
+  // ===== BOSS TABS =====
+  window.setBossTab = (n) => {
+    [0,1].forEach(i => {
+      document.getElementById('bossPanel'+i).style.display = i===n ? 'block' : 'none';
+      document.getElementById('bossTab'+i).classList.toggle('active', i===n);
+    });
+    if (n===1) renderEditItems();
+  };
+
+  // ===== EDIT TABS =====
+  window.setEditTab = (n) => {
+    currentEditTab = n;
+    [0,1,2].forEach(i => {
+      document.getElementById('editTab'+i).classList.toggle('active', i===n);
+    });
+    const titles = ['見積り　チェック項目', '出発前　チェック項目', '完了後　チェック項目'];
+    document.getElementById('editCardTitle').textContent = titles[n];
+    renderEditItems();
+    document.getElementById('saveSuccess').style.display = 'none';
+  };
+
+  function renderEditItems() {
+    const list = document.getElementById('editItemsList');
+    const items = checkItems[currentEditTab];
+    list.innerHTML = items.map((label, idx) => `
+      <div class="edit-item" id="editItem${idx}">
+        <input class="edit-item-input" type="text" value="${label}" id="editInput${idx}" placeholder="項目名を入力">
+        <button class="btn-icon btn-up" onclick="moveItem(${idx},-1)" ${idx===0?'style="opacity:0.3;pointer-events:none;"':''}>↑</button>
+        <button class="btn-icon btn-down" onclick="moveItem(${idx},1)" ${idx===items.length-1?'style="opacity:0.3;pointer-events:none;"':''}>↓</button>
+        <button class="btn-icon btn-delete" onclick="deleteItem(${idx})">✕</button>
+      </div>
+    `).join('');
+  }
+
+  window.addEditItem = () => {
+    checkItems[currentEditTab].push('新しい項目');
+    renderEditItems();
+    // 最後の入力欄にフォーカス
+    const inputs = document.querySelectorAll('.edit-item-input');
+    if (inputs.length > 0) {
+      const last = inputs[inputs.length-1];
+      last.focus();
+      last.select();
+    }
+  };
+
+  window.deleteItem = (idx) => {
+    if (checkItems[currentEditTab].length <= 1) {
+      alert('項目は最低1つ必要です');
+      return;
+    }
+    syncEditInputs();
+    checkItems[currentEditTab].splice(idx, 1);
+    renderEditItems();
+  };
+
+  window.moveItem = (idx, dir) => {
+    syncEditInputs();
+    const items = checkItems[currentEditTab];
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= items.length) return;
+    [items[idx], items[newIdx]] = [items[newIdx], items[idx]];
+    renderEditItems();
+  };
+
+  function syncEditInputs() {
+    const inputs = document.querySelectorAll('.edit-item-input');
+    inputs.forEach((input, idx) => {
+      if (checkItems[currentEditTab][idx] !== undefined) {
+        checkItems[currentEditTab][idx] = input.value;
+      }
+    });
+  }
+
+  window.saveItems = async () => {
+    syncEditInputs();
+    const btn = document.getElementById('saveItemsBtn');
+    btn.disabled = true;
+    btn.textContent = '保存中...';
+    try {
+      await set(ref(db, 'checkItems'), checkItems);
+      document.getElementById('saveSuccess').style.display = 'block';
+      btn.textContent = '💾 保存して社員の画面に反映する';
+      btn.disabled = false;
+      setTimeout(() => {
+        document.getElementById('saveSuccess').style.display = 'none';
+      }, 3000);
+    } catch(e) {
+      alert('保存に失敗しました。通信状態を確認してください。');
+      btn.disabled = false;
+      btn.textContent = '💾 保存して社員の画面に反映する';
+    }
+  };
+
+  // ===== STEPS =====
+  window.setStep = (n) => {
+    [0,1,2].forEach(i => {
+      document.getElementById('step'+i).style.display = i===n ? 'block' : 'none';
+      document.getElementById('tab'+i).classList.toggle('active', i===n);
+    });
+    document.getElementById('successMsg').style.display = 'none';
+    currentStep = n;
+    window.scrollTo(0,0);
+  };
+
+  function setToday() {
+    const today = new Date().toISOString().split('T')[0];
+    ['e_date','d_date','c_date'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && !el.value) el.value = today;
+    });
+  }
+
+  window.toggle = (el) => el.classList.toggle('checked');
+
+  window.previewPhotos = (input, previewId) => {
+    const preview = document.getElementById(previewId);
+    preview.innerHTML = '';
+    Array.from(input.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.className = 'photo-thumb';
+        preview.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // ===== SUBMIT =====
+  window.submitStep = async (step) => {
+    const stepNames = ['estimate','depart','complete'];
+    const stepLabels = ['見積り', '出発前', '完了'];
+    const prefixes = ['e_','d_','c_'];
+    const p = prefixes[step];
+
+    const date = document.getElementById(p+'date')?.value || '';
+    const staff = document.getElementById(p+'staff')?.value || '';
+    const customer = document.getElementById(p+'customer')?.value || '';
+    const note = document.getElementById(p+'note')?.value || '';
+    const workType = step===0 ? (document.getElementById('e_type')?.value || '') : '';
+    const address = step===0 ? (document.getElementById('e_address')?.value || '') : '';
+
+    const container = document.getElementById('checkList'+step);
+    const items = container.querySelectorAll('.check-item');
+    const checks = Array.from(items).map(item => ({
+      label: item.querySelector('.check-label').textContent,
+      checked: item.classList.contains('checked')
+    }));
+
+    const report = {
+      type: stepNames[step], typeLabel: stepLabels[step],
+      date, staff, customer, address, workType, note, checks,
+      submittedAt: new Date().toISOString(), timestamp: Date.now()
+    };
+
+    const btn = document.getElementById('submitBtn'+step);
+    btn.disabled = true;
+    btn.textContent = '送信中...';
+
+    try {
+      await push(ref(db, 'reports'), report);
+      document.getElementById('step'+step).style.display = 'none';
+      document.getElementById('successMsg').style.display = 'block';
+      window.scrollTo(0,0);
+    } catch(e) {
+      alert('送信に失敗しました。通信状態を確認してください。');
+      btn.disabled = false;
+      btn.innerHTML = '📤 送信';
+    }
+  };
+
+  window.afterSubmit = () => {
+    document.getElementById('successMsg').style.display = 'none';
+    setStep(currentStep);
+    const container = document.getElementById('checkList'+currentStep);
+    container.querySelectorAll('.check-item.checked').forEach(el => el.classList.remove('checked'));
+  };
+
+  // ===== REPORTS =====
+  function loadReports() {
+    const reportsRef = query(ref(db, 'reports'), orderByChild('timestamp'));
+    onValue(reportsRef, (snapshot) => {
+      allReports = [];
+      snapshot.forEach(child => {
+        allReports.unshift({ id: child.key, ...child.val() });
+      });
+      renderReports(currentFilter);
+    });
+  }
+
+  window.filterReports = (type, btn) => {
+    document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = type;
+    renderReports(type);
+  };
+
+  function renderReports(filter) {
+    const list = document.getElementById('reportsList');
+    const filtered = filter === 'all' ? allReports : allReports.filter(r => r.type === filter);
+    const today = new Date().toISOString().split('T')[0];
+
+    document.getElementById('statTotal').textContent = allReports.length;
+    document.getElementById('statToday').textContent = allReports.filter(r => r.date === today).length;
+    document.getElementById('statComplete').textContent = allReports.filter(r => r.type === 'complete').length;
+
+    if (filtered.length === 0) {
+      list.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div>まだ報告がありません</div></div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map((r, idx) => {
+      const badgeClass = r.type==='estimate' ? 'badge-estimate' : r.type==='depart' ? 'badge-depart' : 'badge-complete';
+      const checks = r.checks || [];
+      const checkedCount = checks.filter(c => c.checked).length;
+      const totalCount = checks.length;
+      const allOk = checkedCount === totalCount && totalCount > 0;
+      const submittedTime = r.submittedAt ? new Date(r.submittedAt).toLocaleString('ja-JP', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+      const isNew = idx < (allReports.length - lastSeenCount) ? '<span class="new-badge">NEW</span>' : '';
+      const ngItems = checks.filter(c => !c.checked);
+      const ngHtml = ngItems.length > 0
+        ? `<div style="margin-top:10px;"><div style="font-size:11px;color:var(--yellow);font-weight:700;margin-bottom:6px;">⚠️ 未チェック項目</div>${ngItems.map(c=>`<div style="font-size:12px;color:var(--muted);padding:3px 0;border-bottom:1px solid var(--border);">・${c.label}</div>`).join('')}</div>` : '';
+
+      return `
+        <div class="report-card">
+          <div class="report-header">
+            <div>
+              <div class="report-name">${r.customer || '（未入力）'}${isNew}</div>
+              <div class="report-date">${r.date || ''} ${submittedTime} ／ ${r.staff || '（未入力）'}</div>
+              ${r.workType ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;">${r.workType}</div>` : ''}
+              ${r.address ? `<div style="font-size:12px;color:var(--muted);">📍 ${r.address}</div>` : ''}
+            </div>
+            <span class="badge ${badgeClass}">${r.typeLabel}</span>
+          </div>
+          <div style="font-size:13px;color:${allOk?'var(--green)':'var(--yellow)'};font-weight:700;">
+            ${allOk ? '✅ 全項目チェック済' : `⚠️ ${checkedCount}/${totalCount} 項目確認済`}
+          </div>
+          ${ngHtml}
+          ${r.note ? `<div class="report-note">📝 ${r.note}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+
+    lastSeenCount = allReports.length;
+    localStorage.setItem('lastSeenCount', lastSeenCount);
+  }
+
+  window.showMode();
+</script>
+</body>
+</html>
